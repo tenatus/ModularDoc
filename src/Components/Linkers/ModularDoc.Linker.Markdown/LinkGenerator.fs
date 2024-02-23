@@ -5,11 +5,11 @@ open System
 open System.Collections.Generic
 
 module private Link =
-  let private processTarget source target =
+  let private processTarget (source: string) (target: string) =
     // If the linker source is equal to the target..
-    if source = target then
-      // return the target as the link
-      target
+    if source.Equals(target, StringComparison.OrdinalIgnoreCase) then
+      // return "." for a relative link to the current folder
+      "."
     // Otherwise..
     else
       // Splits a path into parts
@@ -27,10 +27,28 @@ module private Link =
           for i in 0 .. min foldersSource.Length foldersTarget.Length - 1 do
             yield foldersSource.[i].Equals(foldersTarget.[i], StringComparison.Ordinal)
         ]
-        |> Seq.findIndex not
+        |> Seq.tryFindIndex not
+        |> Option.defaultWith (fun () -> min foldersSource.Length foldersTarget.Length)
         
       if foldersSource.Length = foldersTarget.Length && index = foldersSource.Length - 1 then
         "./" + foldersTarget.[index]
+      else if foldersSource.Length > foldersTarget.Length && index = foldersTarget.Length then
+        // Create parts for the new link
+        let link = Seq.replicate (foldersSource.Length - foldersTarget.Length) ".."
+        // Compose the link
+        String.Join('/', link)
+      else if foldersTarget.Length > foldersSource.Length && index = foldersSource.Length then
+        // Create parts for the new link
+        let link =
+          seq [
+            yield "."
+            // For every non-matching part of the target, including the last matching part (because the child .md will be in a subfolder)
+            for i in foldersSource.Length - 1 .. foldersTarget.Length - 1 do
+              // go down a level
+              yield foldersTarget.[i]
+          ]
+        // Compose the link
+        String.Join('/', link)
       else
         // Create parts for the new link
         let link =

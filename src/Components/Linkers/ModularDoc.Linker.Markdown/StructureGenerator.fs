@@ -18,8 +18,8 @@ module private Structure =
       result.Add(fst x, snd x)
 
     let createStructure (input: IType) =
-      let structuredOutput (space: string) = space.ToLowerInvariant().Replace('.', '/') + "/"
-      let flatOutput (space: string) = space.ToLowerInvariant().Replace(".", "") + "-"
+      let structuredOutput (space: string) = space.Replace('.', '/') + "/"
+      let flatOutput (space: string) = space.Replace(".", "") + "-"
 
       let processor =
         if toWiki then
